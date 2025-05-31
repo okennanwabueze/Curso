@@ -76,22 +76,30 @@ export default function JobsPage() {
     }
   };
 
-  const handleQuickApply = async (jobId: string) => {
+  const handleQuickApply = async (job: Job) => {
     try {
       const response = await fetch('/api/jobs', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ jobId }),
+        body: JSON.stringify({
+          jobId: job.id,
+          jobTitle: job.title,
+          company: job.company,
+          location: job.location,
+        }),
       });
-      const data = await response.json();
-      if (data.success) {
-        alert('Application submitted successfully!');
+
+      if (!response.ok) {
+        throw new Error('Failed to submit application');
       }
+
+      const data = await response.json();
+      alert(data.message);
     } catch (error) {
-      console.error('Error applying to job:', error);
-      alert('Failed to submit application');
+      console.error('Error applying for job:', error);
+      alert('Failed to submit application. Please try again.');
     }
   };
 
@@ -214,7 +222,7 @@ export default function JobsPage() {
                     </div>
                   </div>
                   <button
-                    onClick={() => handleQuickApply(job.id)}
+                    onClick={() => handleQuickApply(job)}
                     className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2"
                   >
                     <Send className="w-4 h-4" />
