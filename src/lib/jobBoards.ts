@@ -60,8 +60,28 @@ const buildQuery = () => {
   return `${roles} (${industries}) English`;
 };
 
+// Helper to get LinkedIn OAuth access token
+async function getLinkedInAccessToken() {
+  const params = new URLSearchParams();
+  params.append('grant_type', 'client_credentials');
+  params.append('client_id', process.env.LINKEDIN_CLIENT_ID || '');
+  params.append('client_secret', process.env.LINKEDIN_CLIENT_SECRET || '');
+
+  try {
+    const response = await axios.post('https://www.linkedin.com/oauth/v2/accessToken', params, {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+    return response.data.access_token;
+  } catch (error) {
+    console.error('Error fetching LinkedIn access token:', error);
+    return null;
+  }
+}
+
 const searchLinkedIn = async (filters: any): Promise<JobSource[]> => {
   try {
+    const accessToken = await getLinkedInAccessToken();
+    if (!accessToken) return [];
     const response = await axios.get('https://api.linkedin.com/v2/jobs', {
       params: {
         keywords: buildQuery(),
@@ -71,10 +91,9 @@ const searchLinkedIn = async (filters: any): Promise<JobSource[]> => {
         language: 'en',
       },
       headers: {
-        'Authorization': `Bearer ${process.env.LINKEDIN_API_KEY}`,
+        'Authorization': `Bearer ${accessToken}`,
       },
     });
-
     return response.data.elements.map((job: any) => ({
       id: job.id,
       title: job.title,
